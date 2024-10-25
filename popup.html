@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            min-width: 250px;
+            padding: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Watermark Settings</h2>
+    <label>
+        Watermark Text:
+        <input type="text" id="watermarkText" placeholder="Enter your watermark" />
+    </label>
+    <label>
+        Font Size (px):
+        <input type="number" id="fontSize" value="48" />
+    </label>
+    <label>
+        Color:
+        <input type="color" id="color" value="#FF0000" />
+    </label>
+    <label>
+        Transparency:
+        <input type="range" id="opacity" min="0" max="100" value="30" />
+    </label>
+    <label>
+        <input type="checkbox" id="enableRotation" /> Enable Rotation
+    </label>
+    <label>
+        <input type="checkbox" id="enableWave" /> Enable Wave Effect
+    </label>
+    <label>
+        <input type="checkbox" id="enableColorChange" /> Enable Color Change
+    </label>
+    <button id="applyBtn">Apply Watermark</button>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+    <meta charset="utf-8" />
+    <style>
+        #logo {
+            animation-name: normal-logo-animation;
+            animation-duration: 1s;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: 2;
+            animation-direction: normal;
+            animation-play-state: paused;
+
+        }
+        #logo:hover {
+            animation-play-state:running; 
+            animation-duration: 1s;
+            animation-iteration-count:infinite;
+        }
+        @keyframes normal-logo-animation {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+   
+</head>
+
+
+<body>
+    <img id="logo" src="icons/1.jpg" />
+</body>
+
+</html>
