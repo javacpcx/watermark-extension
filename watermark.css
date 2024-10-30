@@ -1,0 +1,61 @@
+/* 旋轉效果 */
+.rotate {
+    animation: rotateWatermark 5s linear infinite;
+}
+
+@keyframes rotateWatermark {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 波浪效果 */
+.wave {
+    animation: waveEffect 3s ease-in-out infinite alternate;
+}
+
+@keyframes waveEffect {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+/* 顏色變換效果 */
+.color-change {
+    animation: colorChange 5s linear infinite;
+}
+
+@keyframes colorChange {
+    0% {
+        color: red;
+    }
+
+    25% {
+        color: orange;
+    }
+
+    50% {
+        color: yellow;
+    }
+
+    75% {
+        color: green;
+    }
+
+    100% {
+        color: blue;
+    }
+}
+
