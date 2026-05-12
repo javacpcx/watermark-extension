@@ -1,77 +1,126 @@
-// 初始化全局變數 moveInterval
-let moveInterval = null;
+(function () {
+  if (window.hasWatermarkLoaded) return;
+  window.hasWatermarkLoaded = true;
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  let watermark = document.getElementById('watermark-overlay');
+  let moveInterval = null;
 
-  // 如果浮水印不存在，創建一個新的
-  if (!watermark) {
-    watermark = document.createElement('div');
-    watermark.id = 'watermark-overlay';
-    document.body.appendChild(watermark);
+  function init() {
+    chrome.storage.local.get([
+      'enableWatermark',
+      'watermarkText',
+      'fontFamily',
+      'displayMode',
+      'fontSize',
+      'color',
+      'opacity',
+      'enableRotation',
+      'enableWave',
+      'enableColorChange',
+      'iconDataUrl'
+    ], (settings) => {
+      applyWatermark(settings);
+    });
   }
 
-  // 檢查是否有自訂圖片的 URL
-  if (message.iconDataUrl) {
-    // 使用自訂圖片作為浮水印
-    watermark.style.backgroundImage = `url(${message.iconDataUrl})`;
-    watermark.style.backgroundSize = 'contain';
-    watermark.style.width = '128px';  // 可根據需求調整大小
-    watermark.style.height = '128px';
-    watermark.style.backgroundRepeat = 'no-repeat';
-    watermark.innerText = '';  // 清空文字
-  } else if (message.watermarkText) {
-    // 使用文字作為浮水印
-    watermark.innerText = message.watermarkText;
-    watermark.style.fontSize = `${message.fontSize}px`;
-    watermark.style.color = message.color;
-    watermark.style.opacity = message.opacity / 100;
-    watermark.style.backgroundImage = '';  // 移除背景圖片
-    watermark.style.width = '';            // 清空圖片樣式
-    watermark.style.height = '';
+  function createWatermarkElement(settings) {
+    const waveLayer = document.createElement('div');
+    waveLayer.className = 'wave-layer';
+    
+    const rotateLayer = document.createElement('div');
+    rotateLayer.className = 'rotate-layer';
+    
+    const contentLayer = document.createElement('div');
+    contentLayer.className = 'content-layer';
+    
+    rotateLayer.appendChild(contentLayer);
+    waveLayer.appendChild(rotateLayer);
+
+    // 應用內容與設定
+    if (settings.iconDataUrl) {
+      contentLayer.style.backgroundImage = `url(${settings.iconDataUrl})`;
+      contentLayer.style.backgroundSize = 'contain';
+      contentLayer.style.width = settings.displayMode === 'tiled' ? '64px' : '128px';
+      contentLayer.style.height = settings.displayMode === 'tiled' ? '64px' : '128px';
+      contentLayer.style.backgroundRepeat = 'no-repeat';
+      contentLayer.innerText = '';
+    } else {
+      contentLayer.innerText = settings.watermarkText || 'Confidential';
+      contentLayer.style.fontSize = `${settings.fontSize || 48}px`;
+      contentLayer.style.color = settings.color || '#FF0000';
+      contentLayer.style.fontFamily = settings.fontFamily || 'Arial';
+    }
+
+    contentLayer.style.opacity = (settings.opacity || 30) / 100;
+    waveLayer.classList.toggle('active', settings.enableWave);
+    rotateLayer.classList.toggle('active', settings.enableRotation);
+    contentLayer.classList.toggle('color-active', settings.enableColorChange);
+
+    return waveLayer;
   }
 
-  // 應用特效
-  watermark.classList.remove('rotate', 'wave', 'color-change');
-  if (message.enableRotation) {
-    watermark.classList.add('rotate');
-  }
-  if (message.enableWave) {
-    watermark.classList.add('wave');
-  }
-  if (message.enableColorChange) {
-    watermark.classList.add('color-change');
-  }
+  function applyWatermark(settings) {
+    let host = document.getElementById('watermark-host');
+    if (host) host.remove();
+    if (moveInterval) clearInterval(moveInterval);
 
-  // 基本樣式
-  watermark.style.pointerEvents = 'none';
-  watermark.style.zIndex = '9999';
-  watermark.style.position = 'fixed';
+    if (!settings || settings.enableWatermark === false) return;
 
-  // 定義移動浮水印的函數
-  function moveWatermark() {
-    const windowWidth = window.innerWidth - watermark.offsetWidth;
-    const windowHeight = window.innerHeight - watermark.offsetHeight;
+    host = document.createElement('div');
+    host.id = 'watermark-host';
+    document.body.appendChild(host);
 
-    const randomTop = Math.random() * windowHeight;
-    const randomLeft = Math.random() * windowWidth;
+    if (settings.displayMode === 'tiled') {
+      const grid = document.createElement('div');
+      grid.className = 'grid-container';
+      // 填充網格，大約 50 個元素足以覆蓋大多數螢幕
+      for (let i = 0; i < 60; i++) {
+        const item = document.createElement('div');
+        item.className = 'grid-item';
+        item.appendChild(createWatermarkElement(settings));
+        grid.appendChild(item);
+      }
+      host.appendChild(grid);
+    } else {
+      const item = document.createElement('div');
+      item.className = 'watermark-item';
+      item.appendChild(createWatermarkElement(settings));
+      host.appendChild(item);
+      startMoving(item);
+    }
 
-    const randomDuration = Math.random() * 3 + 1;
-    watermark.style.transition = `top ${randomDuration}s ease, left ${randomDuration}s ease, opacity ${randomDuration}s ease`;
-
-    const randomOpacity = Math.random() * 0.5 + 0.5;
-    watermark.style.opacity = randomOpacity;
-
-    watermark.style.top = `${randomTop}px`;
-    watermark.style.left = `${randomLeft}px`;
+    setupObserver(host);
   }
 
-  // 清除舊的移動計時器，避免重複設置
-  if (moveInterval) {
-    clearInterval(moveInterval);
+  function startMoving(element) {
+    function move() {
+      if (!element.parentElement) return;
+      const windowWidth = window.innerWidth - element.offsetWidth;
+      const windowHeight = window.innerHeight - element.offsetHeight;
+      const randomTop = Math.random() * Math.max(0, windowHeight);
+      const randomLeft = Math.random() * Math.max(0, windowWidth);
+      const duration = Math.random() * 3 + 2;
+      element.style.transition = `top ${duration}s ease-in-out, left ${duration}s ease-in-out`;
+      element.style.top = `${randomTop}px`;
+      element.style.left = `${randomLeft}px`;
+    }
+    move();
+    moveInterval = setInterval(move, 4000);
   }
 
-  // 初始化並啟動新的計時器，每 4 秒隨機移動一次浮水印
-  moveWatermark(); // 立即執行一次
-  moveInterval = setInterval(moveWatermark, 4000);
-});
+  function setupObserver(host) {
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById('watermark-host')) {
+        document.body.appendChild(host);
+      }
+    });
+    observer.observe(document.body, { childList: true });
+  }
+
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'updateWatermark') {
+      applyWatermark(message.settings);
+    }
+  });
+
+  init();
+})();

@@ -1,5 +1,45 @@
+document.addEventListener('DOMContentLoaded', () => {
+  chrome.storage.local.get([
+    'enableWatermark',
+    'watermarkText',
+    'fontFamily',
+    'displayMode',
+    'fontSize',
+    'color',
+    'opacity',
+    'enableRotation',
+    'enableWave',
+    'enableColorChange',
+    'iconDataUrl'
+  ], (items) => {
+    if (items.watermarkText !== undefined) {
+      document.getElementById('enableWatermark').checked = items.enableWatermark ?? true;
+      document.getElementById('watermarkText').value = items.watermarkText || '';
+      document.getElementById('fontFamily').value = items.fontFamily || "'Microsoft JhengHei', sans-serif";
+      document.getElementById('displayMode').value = items.displayMode || "floating";
+      document.getElementById('fontSize').value = items.fontSize || 48;
+      document.getElementById('color').value = items.color || '#FF0000';
+      document.getElementById('opacity').value = items.opacity || 30;
+      document.getElementById('enableRotation').checked = items.enableRotation || false;
+      document.getElementById('enableWave').checked = items.enableWave || false;
+      document.getElementById('enableColorChange').checked = items.enableColorChange || false;
+      
+      if (items.iconDataUrl) {
+        const img = document.createElement('img');
+        img.src = items.iconDataUrl;
+        img.style.maxWidth = '100%';
+        document.getElementById('iconPreview').innerHTML = '';
+        document.getElementById('iconPreview').appendChild(img);
+      }
+    }
+  });
+});
+
 document.getElementById('applyBtn').addEventListener('click', () => {
+  const enabled = document.getElementById('enableWatermark').checked;
   const text = document.getElementById('watermarkText').value || 'Confidential';
+  const fontFamily = document.getElementById('fontFamily').value;
+  const displayMode = document.getElementById('displayMode').value;
   const fontSize = document.getElementById('fontSize').value || 48;
   const color = document.getElementById('color').value || '#FF0000';
   const opacity = document.getElementById('opacity').value || 30;
@@ -7,82 +47,50 @@ document.getElementById('applyBtn').addEventListener('click', () => {
   const enableWave = document.getElementById('enableWave').checked;
   const enableColorChange = document.getElementById('enableColorChange').checked;
 
-  // 取得圖片上傳文件
-  const iconInput = document.getElementById('iconUpload');
-  if (iconInput.files && iconInput.files[0]) {
-    const file = iconInput.files[0];
-
-    // 確認圖片尺寸不超過 512x512
-    const img = new Image();
-    img.onload = () => {
-      if (img.width > 512 || img.height > 512) {
-        alert('Icon size cannot exceed 512x512 pixels.');
-        return;
-      }
-
-      // 將圖片轉換為 Data URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const iconDataUrl = e.target.result;
-
-        // 保存所有設置到 storage，包括圖片 Data URL
-        chrome.storage.sync.set({
-          watermarkText: text,
-          fontSize: fontSize,
-          color: color,
-          opacity: opacity,
-          enableRotation: enableRotation,
-          enableWave: enableWave,
-          enableColorChange: enableColorChange,
-          iconDataUrl: iconDataUrl
-        }, () => {
-          console.log('Settings saved with custom icon.');
-        });
-
-        // 傳送設置到內容腳本
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          chrome.tabs.sendMessage(tabs[0].id, {
-            watermarkText: text,
-            fontSize: fontSize,
-            color: color,
-            opacity: opacity,
-            enableRotation: enableRotation,
-            enableWave: enableWave,
-            enableColorChange: enableColorChange,
-            iconDataUrl: iconDataUrl
-          });
-        });
-      };
-      reader.readAsDataURL(file);
-    };
-    img.src = URL.createObjectURL(file);
-  } else {
-    // 沒有上傳圖片，僅儲存其他設置
-    chrome.storage.sync.set({
+  const saveAndNotify = (iconDataUrl = null) => {
+    const settings = {
+      enableWatermark: enabled,
       watermarkText: text,
+      fontFamily: fontFamily,
+      displayMode: displayMode,
       fontSize: fontSize,
       color: color,
       opacity: opacity,
       enableRotation: enableRotation,
       enableWave: enableWave,
       enableColorChange: enableColorChange,
-      iconDataUrl: null
-    }, () => {
-      console.log('Settings saved without custom icon.');
-    });
+      iconDataUrl: iconDataUrl
+    };
 
-    // 傳送設置到內容腳本
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, {
-        watermarkText: text,
-        fontSize: fontSize,
-        color: color,
-        opacity: opacity,
-        enableRotation: enableRotation,
-        enableWave: enableWave,
-        enableColorChange: enableColorChange,
-        iconDataUrl: null
+    chrome.storage.local.set(settings, () => {
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          chrome.tabs.sendMessage(tab.id, { action: 'updateWatermark', settings: settings }).catch(() => {});
+        });
       });
+      
+      const btn = document.getElementById('applyBtn');
+      const originalText = btn.innerText;
+      btn.innerText = 'Settings Applied!';
+      btn.style.backgroundColor = '#4CAF50';
+      btn.style.color = 'white';
+      setTimeout(() => {
+        btn.innerText = originalText;
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+      }, 2000);
+    });
+  };
+
+  const iconInput = document.getElementById('iconUpload');
+  if (iconInput.files && iconInput.files[0]) {
+    const file = iconInput.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => saveAndNotify(e.target.result);
+    reader.readAsDataURL(file);
+  } else {
+    chrome.storage.local.get(['iconDataUrl'], (result) => {
+      saveAndNotify(result.iconDataUrl);
     });
   }
 });

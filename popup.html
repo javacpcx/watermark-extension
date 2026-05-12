@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
     <style>
         body {
             min-width: 250px;
@@ -18,12 +19,33 @@
 <body>
     <h2>Watermark Settings</h2>
     <label>
+        <input type="checkbox" id="enableWatermark" checked /> <strong>Enable Watermark</strong>
+    </label>
+    <hr>
+    <label>
         Watermark Text:
         <input type="text" id="watermarkText" placeholder="Enter your watermark" />
     </label>
     <label>
+        Font Family:
+        <select id="fontFamily">
+            <option value="'Microsoft JhengHei', sans-serif">微軟正黑體</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="cursive">Cursive</option>
+        </select>
+    </label>
+    <label>
+        Display Mode:
+        <select id="displayMode">
+            <option value="floating">Random Floating</option>
+            <option value="tiled">Tiled Grid</option>
+        </select>
+    </label>
+    <label>
         Font Size (px):
-        <input type="number" id="fontSize" value="48" />
+        <input type="number" id="fontSize" value="48" min="10" max="200" />
     </label>
     <label>
         Color:
@@ -45,8 +67,15 @@
     <label>
         Upload Custom Icon (max 512x512):
         <input type="file" id="iconUpload" accept="image/*" />
+        <div id="iconPreview" style="margin-top: 5px; max-width: 50px;"></div>
     </label>
-    <button id="applyBtn">Apply Watermark</button>
+    <button id="applyBtn" style="width: 100%; margin-top: 10px; padding: 8px; cursor: pointer;">Apply & Save Settings</button>
+
+    <div style="margin-top: 20px; text-align: center; border-top: 1px solid #eee; padding-top: 15px;">
+        <a href="https://www.buymeacoffee.com/javacpc3" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; background-color: #FFDD00; color: #000000; padding: 10px 24px; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: all 0.2s ease; border: 1px solid #FFDD00;">
+            <span style="font-size: 18px; margin-right: 8px;">☕</span> Buy me a coffee
+        </a>
+    </div>
 
     <script src="popup.js"></script>
 </body>
