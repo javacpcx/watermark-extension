@@ -92,5 +92,13 @@ document.getElementById('applyBtn').addEventListener('click', () => {
     chrome.storage.local.get(['iconDataUrl'], (result) => {
       saveAndNotify(result.iconDataUrl);
     });
-  }
-});
+    }
+    });
+
+    // 處理 Buy Me a Coffee 連結點擊
+    document.getElementById('buyMeACoffee').addEventListener('click', (e) => {
+    e.preventDefault();
+    chrome.tabs.create({ url: 'https://www.buymeacoffee.com/javacpc3' });
+    });
+
+

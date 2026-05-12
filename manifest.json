@@ -5,7 +5,8 @@
     "description": "A Chrome extension to display customizable watermarks on any webpage.",  
     "permissions": [
       "scripting",  
-      "storage"     
+      "storage",
+      "tabs"
     ],
     "background": {
       "service_worker": "background.js"  
@@ -25,7 +26,7 @@
     },
     "content_scripts": [
       {
-        "matches": ["<all_urls>"],  
+        "matches": ["<all_urls>"],
         "css": ["watermark.css"],   
         "js": ["content.js"]        
       }
